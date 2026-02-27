@@ -208,10 +208,19 @@ public class SparkMicroBatchStream implements MicroBatchStream, SupportsTriggerA
 
   private List<FileScanTask> planFiles(StreamingOffset startOffset, StreamingOffset endOffset) {
     List<FileScanTask> fileScanTasks = Lists.newArrayList();
-    StreamingOffset batchStartOffset =
-        StreamingOffset.START_OFFSET.equals(startOffset)
-            ? determineStartingOffset(table, fromTimestamp, startingOffset)
-            : startOffset;
+    StreamingOffset batchStartOffset;
+    if (StreamingOffset.START_OFFSET.equals(startOffset)) {
+      if (fromTimestamp == Long.MIN_VALUE && startingOffset == StartingOffset.LATEST) {
+        // Table was empty at stream start (otherwise initialOffset would not be START_OFFSET).
+        // All current data is new, so start from the oldest snapshot.
+        batchStartOffset =
+            new StreamingOffset(SnapshotUtil.oldestAncestor(table).snapshotId(), 0, false);
+      } else {
+        batchStartOffset = determineStartingOffset(table, fromTimestamp, startingOffset);
+      }
+    } else {
+      batchStartOffset = startOffset;
+    }
 
     StreamingOffset currentOffset = null;
 
@@ -408,7 +417,14 @@ public class SparkMicroBatchStream implements MicroBatchStream, SupportsTriggerA
     StreamingOffset effectiveStart = (StreamingOffset) startOffset;
 
     if (startOffset.equals(StreamingOffset.START_OFFSET)) {
-      effectiveStart = determineStartingOffset(table, fromTimestamp, startingOffset);
+      if (fromTimestamp == Long.MIN_VALUE && startingOffset == StartingOffset.LATEST) {
+        // Table was empty at stream start (otherwise initialOffset would not be START_OFFSET).
+        // All current data is new, so start from the oldest snapshot.
+        effectiveStart =
+            new StreamingOffset(SnapshotUtil.oldestAncestor(table).snapshotId(), 0, false);
+      } else {
+        effectiveStart = determineStartingOffset(table, fromTimestamp, startingOffset);
+      }
     }
 
     Snapshot curSnapshot = table.snapshot(effectiveStart.snapshotId());

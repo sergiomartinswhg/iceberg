@@ -58,10 +58,21 @@ class SyncSparkMicroBatchPlanner extends BaseSparkMicroBatchPlanner {
   @Override
   public List<FileScanTask> planFiles(StreamingOffset startOffset, StreamingOffset endOffset) {
     List<FileScanTask> fileScanTasks = Lists.newArrayList();
-    StreamingOffset batchStartOffset =
-        StreamingOffset.START_OFFSET.equals(startOffset)
-            ? MicroBatchUtils.determineStartingOffset(table(), fromTimestamp, startingOffset)
-            : startOffset;
+    StreamingOffset batchStartOffset;
+    if (StreamingOffset.START_OFFSET.equals(startOffset)) {
+      if (fromTimestamp == Long.MIN_VALUE && startingOffset == StartingOffset.LATEST) {
+        // Table was empty at stream start (otherwise initialOffset would not be START_OFFSET).
+        // All current data is new, so start from the oldest snapshot.
+        batchStartOffset =
+            new StreamingOffset(
+                SnapshotUtil.oldestAncestor(table()).snapshotId(), 0, false);
+      } else {
+        batchStartOffset =
+            MicroBatchUtils.determineStartingOffset(table(), fromTimestamp, startingOffset);
+      }
+    } else {
+      batchStartOffset = startOffset;
+    }
 
     StreamingOffset currentOffset = null;
 
@@ -129,8 +140,16 @@ class SyncSparkMicroBatchPlanner extends BaseSparkMicroBatchPlanner {
     StreamingOffset effectiveStart = startOffset;
 
     if (startOffset.equals(StreamingOffset.START_OFFSET)) {
-      effectiveStart =
-          MicroBatchUtils.determineStartingOffset(table(), fromTimestamp, startingOffset);
+      if (fromTimestamp == Long.MIN_VALUE && startingOffset == StartingOffset.LATEST) {
+        // Table was empty at stream start (otherwise initialOffset would not be START_OFFSET).
+        // All current data is new, so start from the oldest snapshot.
+        effectiveStart =
+            new StreamingOffset(
+                SnapshotUtil.oldestAncestor(table()).snapshotId(), 0, false);
+      } else {
+        effectiveStart =
+            MicroBatchUtils.determineStartingOffset(table(), fromTimestamp, startingOffset);
+      }
     }
 
     Snapshot curSnapshot = table().snapshot(effectiveStart.snapshotId());
