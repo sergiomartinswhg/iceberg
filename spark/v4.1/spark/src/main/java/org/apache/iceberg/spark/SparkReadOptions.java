@@ -62,14 +62,28 @@ public class SparkReadOptions {
   // Overrides the table's read.parquet.vectorization.batch-size
   public static final String VECTORIZATION_BATCH_SIZE = "batch-size";
 
+  // Set ID that is used to fetch scan tasks
+  public static final String SCAN_TASK_SET_ID = "scan-task-set-id";
+
   // skip snapshots of type delete while reading stream out of iceberg table
   public static final String STREAMING_SKIP_DELETE_SNAPSHOTS = "streaming-skip-delete-snapshots";
   public static final boolean STREAMING_SKIP_DELETE_SNAPSHOTS_DEFAULT = false;
 
-  // skip snapshots of type overwrite while reading stream out of iceberg table
+  /**
+   * Skip snapshots of type overwrite while reading stream out of iceberg table.
+   *
+   * @deprecated and will be removed in a future release; use {@link #STREAMING_OVERWRITE_MODE} with
+   *     value "skip" instead.
+   */
+  @Deprecated
   public static final String STREAMING_SKIP_OVERWRITE_SNAPSHOTS =
       "streaming-skip-overwrite-snapshots";
+
   public static final boolean STREAMING_SKIP_OVERWRITE_SNAPSHOTS_DEFAULT = false;
+
+  // Configures how to handle overwrite snapshots during streaming reads
+  public static final String STREAMING_OVERWRITE_MODE = "streaming-overwrite-mode";
+  public static final String STREAMING_OVERWRITE_MODE_DEFAULT = "fail";
 
   // Controls whether to report locality information to Spark while allocating input partitions
   public static final String LOCALITY = "locality";
@@ -83,6 +97,10 @@ public class SparkReadOptions {
   // maximum rows per micro_batch
   public static final String STREAMING_MAX_ROWS_PER_MICRO_BATCH =
       "streaming-max-rows-per-micro-batch";
+
+  // Controls where a streaming query starts when there is no checkpoint
+  public static final String STREAMING_STARTING_OFFSET = "streaming-starting-offset";
+  public static final String STREAMING_STARTING_OFFSET_DEFAULT = "earliest";
 
   // Table path
   public static final String PATH = "path";
