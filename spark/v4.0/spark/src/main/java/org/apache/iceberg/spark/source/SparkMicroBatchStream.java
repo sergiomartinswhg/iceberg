@@ -84,7 +84,7 @@ public class SparkMicroBatchStream implements MicroBatchStream, SupportsAdmissio
   private final StreamingOffset initialOffset;
   private final boolean skipDelete;
   private final boolean skipOverwrite;
-  private final Long fromTimestamp;
+  private final long fromTimestamp;
   private final int maxFilesPerMicroBatch;
   private final int maxRecordsPerMicroBatch;
   private final boolean cacheDeleteFilesOnExecutors;
@@ -283,8 +283,9 @@ public class SparkMicroBatchStream implements MicroBatchStream, SupportsAdmissio
       return StreamingOffset.START_OFFSET;
     }
 
-    if (fromTimestamp == null) {
+    if (fromTimestamp == Long.MIN_VALUE) {
       // if fromTimestamp is not specified, start from current snapshot and scan all files
+      LOG.info("StreamingOffset from currentSnapshot and scanning all files!");
       return new StreamingOffset(table.currentSnapshot().snapshotId(), 0, true);
     }
 
