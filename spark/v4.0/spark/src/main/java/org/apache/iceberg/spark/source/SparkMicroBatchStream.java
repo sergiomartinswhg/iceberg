@@ -48,7 +48,6 @@ import org.apache.iceberg.relocated.com.google.common.base.Preconditions;
 import org.apache.iceberg.relocated.com.google.common.collect.Iterables;
 import org.apache.iceberg.relocated.com.google.common.collect.Lists;
 import org.apache.iceberg.spark.SparkReadConf;
-import org.apache.iceberg.spark.SparkReadOptions;
 import org.apache.iceberg.types.Types;
 import org.apache.iceberg.util.Pair;
 import org.apache.iceberg.util.PropertyUtil;
@@ -284,8 +283,8 @@ public class SparkMicroBatchStream implements MicroBatchStream, SupportsAdmissio
     }
 
     if (fromTimestamp == null) {
-      // match existing behavior and start from the oldest snapshot
-      return new StreamingOffset(SnapshotUtil.oldestAncestor(table).snapshotId(), 0, false);
+      // if fromTimestamp is not specified, start from current timestamp and scan all files
+      return new StreamingOffset(table.currentSnapshot().snapshotId(), 0, true);
     }
 
     if (table.currentSnapshot().timestampMillis() < fromTimestamp) {
