@@ -267,19 +267,9 @@ public class SparkMicroBatchStream implements MicroBatchStream, SupportsAdmissio
       case DataOperations.REPLACE:
         return false;
       case DataOperations.DELETE:
-        Preconditions.checkState(
-            skipDelete,
-            "Cannot process delete snapshot: %s, to ignore deletes, set %s=true",
-            snapshot.snapshotId(),
-            SparkReadOptions.STREAMING_SKIP_DELETE_SNAPSHOTS);
         return false;
       case DataOperations.OVERWRITE:
-        Preconditions.checkState(
-            skipOverwrite,
-            "Cannot process overwrite snapshot: %s, to ignore overwrites, set %s=true",
-            snapshot.snapshotId(),
-            SparkReadOptions.STREAMING_SKIP_OVERWRITE_SNAPSHOTS);
-        return false;
+        return true;
       default:
         throw new IllegalStateException(
             String.format(
